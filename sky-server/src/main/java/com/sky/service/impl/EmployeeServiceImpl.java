@@ -1,7 +1,15 @@
 package com.sky.service.impl;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.sky.context.BaseContext;
+import com.sky.dto.EmployeePageQueryDTO;
+import com.sky.result.PageResult;
+import org.springframework.beans.BeanUtils;
 import com.sky.constant.MessageConstant;
+import com.sky.constant.PasswordConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.entity.Employee;
 import com.sky.exception.AccountLockedException;
@@ -9,9 +17,15 @@ import com.sky.exception.AccountNotFoundException;
 import com.sky.exception.PasswordErrorException;
 import com.sky.mapper.EmployeeMapper;
 import com.sky.service.EmployeeService;
+import javassist.expr.NewArray;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
+
+import java.time.LocalDateTime;
+import ch.qos.logback.core.joran.util.beans.BeanUtil;  // ❌ 错误！
+
+
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -40,6 +54,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         //密码比对
         // TODO 后期需要进行md5加密，然后再进行比对
+        //对前端传过来的密码进行md5加密
+        password = DigestUtils.md5DigestAsHex(password.getBytes());
         if (!password.equals(employee.getPassword())) {
             //密码错误
             throw new PasswordErrorException(MessageConstant.PASSWORD_ERROR);
@@ -52,6 +68,84 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         //3、返回实体对象
         return employee;
+    }
+
+    //新增员工
+    @Override
+    public void insert(EmployeeDTO employeeDTO) {
+        //将DTO employeeDTO转换为Employee实体对象
+        Employee employee = new Employee();
+        //对象属性转换
+        BeanUtils.copyProperties(employeeDTO, employee);
+        //设置默认值
+        //密码：默认密码为123456，进行md5加密
+        employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
+        //状态：默认1是启用状态，0是锁定状态
+        employee.setStatus(StatusConstant.ENABLE);
+        //创建时间和更新时间：默认当前时间
+        employee.setCreateTime(LocalDateTime.now());
+        employee.setUpdateTime(LocalDateTime.now());
+        //创建人和更新人：默认当前登录用户
+        //todo 后期需要改为当前登录用户的id值
+        employee.setCreateUser(BaseContext.getCurrentId());
+        employee.setUpdateUser(BaseContext.getCurrentId());
+        //新增员工
+        employeeMapper.insert(employee);
+    }
+
+    //分页查询员工
+    @Override
+    public PageResult pageQuery(EmployeePageQueryDTO employeePageDTO) {
+        //开始分页查询
+        PageHelper.startPage(employeePageDTO.getPage(), employeePageDTO.getPageSize());
+        //查询数据库
+        Page<Employee> page = employeeMapper.pageQuery(employeePageDTO);
+        //封装分页结果
+        PageResult pageResult = new PageResult();
+        pageResult.setTotal(page.getTotal());
+        pageResult.setRecords(page.getResult());
+        return pageResult;
+    }
+
+    //员工账号的启用/禁用
+    @Override
+    public void startOrStop(Long id, Integer status) {
+        //更新员工状态
+        Employee employee = new Employee();
+        employee.setId(id);
+        employee.setStatus(status);
+        employee.setUpdateTime(LocalDateTime.now());
+        employee.setUpdateUser(BaseContext.getCurrentId());
+        //更新员工状态
+        employeeMapper.update(employee);
+    }
+
+    //根据员工id查询员工信息
+    @Override
+    public Employee getById(Long id) {
+        //根据员工id查询员工信息
+        Employee employee = employeeMapper.getById(id);
+        //密码：屏蔽密码字段
+        employee.setPassword("****");
+        //返回员工信息
+        return employee;
+    }
+
+    //修改员工信息
+    @Override
+    public void update(EmployeeDTO employeeDTO) {
+        //将DTO employeeDTO转换为Employee实体对象
+        Employee employee = new Employee();
+        //对象属性转换
+        BeanUtils.copyProperties(employeeDTO, employee);
+        //更新员工信息
+        employeeMapper.update(employee);
+        //更新人：默认当前登录用户
+        employee.setUpdateUser(BaseContext.getCurrentId());
+        //更新时间：默认当前时间
+        employee.setUpdateTime(LocalDateTime.now());
+        //更新员工信息
+        employeeMapper.update(employee);
     }
 
 }
