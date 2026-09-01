@@ -82,13 +82,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
         //状态：默认1是启用状态，0是锁定状态
         employee.setStatus(StatusConstant.ENABLE);
-        //创建时间和更新时间：默认当前时间
-        employee.setCreateTime(LocalDateTime.now());
-        employee.setUpdateTime(LocalDateTime.now());
-        //创建人和更新人：默认当前登录用户
-        //todo 后期需要改为当前登录用户的id值
-        employee.setCreateUser(BaseContext.getCurrentId());
-        employee.setUpdateUser(BaseContext.getCurrentId());
+        //创建时间和更新时间、创建人和更新人：由AOP切面自动填充
+        //employee.setCreateTime(LocalDateTime.now());
+        //employee.setUpdateTime(LocalDateTime.now());
+        //employee.setCreateUser(BaseContext.getCurrentId());
+        //employee.setUpdateUser(BaseContext.getCurrentId());
         //新增员工
         employeeMapper.insert(employee);
     }
@@ -114,8 +112,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = new Employee();
         employee.setId(id);
         employee.setStatus(status);
-        employee.setUpdateTime(LocalDateTime.now());
-        employee.setUpdateUser(BaseContext.getCurrentId());
+        //updateTime和updateUser由AOP切面自动填充
+        //employee.setUpdateTime(LocalDateTime.now());
+        //employee.setUpdateUser(BaseContext.getCurrentId());
         //更新员工状态
         employeeMapper.update(employee);
     }
@@ -138,12 +137,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = new Employee();
         //对象属性转换
         BeanUtils.copyProperties(employeeDTO, employee);
-        //更新员工信息
-        employeeMapper.update(employee);
-        //更新人：默认当前登录用户
-        employee.setUpdateUser(BaseContext.getCurrentId());
-        //更新时间：默认当前时间
-        employee.setUpdateTime(LocalDateTime.now());
+        //updateTime和updateUser由AOP切面自动填充
+        //employee.setUpdateUser(BaseContext.getCurrentId());
+        //employee.setUpdateTime(LocalDateTime.now());
         //更新员工信息
         employeeMapper.update(employee);
     }
