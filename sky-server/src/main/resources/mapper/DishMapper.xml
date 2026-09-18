@@ -42,13 +42,60 @@
         <if test="description != null and description != ''">
             description = #{description},
         </if>
+        <if test="status != null">
+            status = #{status},
+        </if>
         <if test="updateTime != null">
             update_time = #{updateTime},
         </if>
-        <if test="updateUser != null and updateUser != ''">
+        <if test="updateUser != null">
             update_user = #{updateUser},
         </if>
     </set>
         where id = #{id}
         </update>
-    </mapper>
+    <!--根据分类id查询菜品列表（仅查询启售中的菜品）-->
+    <select id="listByCategoryId" resultType="com.sky.vo.DishVO">
+        select d.*, c.name as categoryName
+        from dish d
+        left join category c on d.category_id = c.id
+        where d.category_id = #{categoryId}
+          and d.status = 1
+    </select>
+    <!--根据分类id查询菜品数量-->
+    <select id="countByCategoryId" resultType="java.lang.Integer">
+        select count(id) from dish where category_id = #{categoryId}
+    </select>
+    <!--根据id查询菜品-->
+    <select id="getById" parameterType="java.lang.Long" resultType="com.sky.entity.Dish">
+        select * from dish where id = #{id}
+    </select>
+    <!--根据id删除菜品-->
+    <delete id="deleteById" parameterType="java.lang.Long">
+        delete from dish where id = #{id}
+    </delete>
+    <!--根据条件查询菜品（动态SQL）-->
+    <select id="list" parameterType="com.sky.entity.Dish" resultType="com.sky.entity.Dish">
+        select * from dish
+        <where>
+            <if test="categoryId != null">
+                and category_id = #{categoryId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+
+
+    <!--根据条件统计菜品数量-->
+    <select id="countByMap" resultType="java.lang.Integer">
+        select count(id) from dish
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+        </where>
+    </select>
+
+</mapper>
